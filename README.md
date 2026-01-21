@@ -1,5 +1,7 @@
 # 📱 WhatsApp Chat Analyzer
 
+![WhatsApp Chat Analyzer](whatsapp-chat-analyzer.png)
+
 A modern web-based tool to analyze WhatsApp group chat activity and engagement patterns. Built with vanilla JavaScript, Chart.js, and Node.js.
 
 ## ✨ Features
