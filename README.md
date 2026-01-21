@@ -22,7 +22,7 @@ A modern web-based tool to analyze WhatsApp group chat activity and engagement p
 1. **Clone or download the project files**
 2. **Navigate to the project directory**
    ```bash
-   cd first500days
+   cd whatsapp-chat-analyzer
    ```
 
 3. **Start the server**
@@ -53,13 +53,7 @@ A modern web-based tool to analyze WhatsApp group chat activity and engagement p
 
 ## 🧪 Testing
 
-Test the analyzer with the included sample data:
-
-```bash
-npm test
-```
-
-This will run the analyzer on `data.txt` and display results in the console.
+Test the analyzer with the included sample data by uploading the `data.txt` file through the web interface at `http://localhost:3000`.
 
 ## 📈 What You'll Get
 
