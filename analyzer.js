@@ -1,12 +1,38 @@
 class WhatsAppAnalyzer {
     constructor() {
         this.initializeEventListeners();
+        this.initializeTheme();
         this.chart = null;
+    }
+
+    initializeTheme() {
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        this.updateThemeIcon(savedTheme);
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            this.updateThemeIcon(newTheme);
+        });
+    }
+
+    updateThemeIcon(theme) {
+        const icon = document.querySelector('#themeToggle .material-icons');
+        icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
     }
 
     initializeEventListeners() {
         const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.querySelector('.upload-button');
+        
         fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+        uploadButton.addEventListener('click', () => fileInput.click());
     }
 
     async handleFileUpload(event) {
@@ -198,43 +224,166 @@ class WhatsAppAnalyzer {
     }
 
     displayResults(analysis) {
-        this.createStatsCards(analysis);
+        // Hide instructions and show results
+        document.querySelector('.instructions-grid').style.display = 'none';
+        const resultsSection = document.getElementById('results');
+        resultsSection.style.display = 'block';
+        
+        // Create results HTML
+        resultsSection.innerHTML = `
+            <div class="results-container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><span class="material-icons">people</span></div>
+                        <div class="stat-number">${analysis.totalUsers}</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><span class="material-icons">person_add</span></div>
+                        <div class="stat-number">${analysis.last7Days.reduce((sum, d) => sum + d.newUsers, 0)}</div>
+                        <div class="stat-label">New Joins (7 days)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><span class="material-icons">trending_up</span></div>
+                        <div class="stat-number">${Math.max(...analysis.last7Days.map(d => d.activeUsers))}</div>
+                        <div class="stat-label">Peak Daily Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><span class="material-icons">message</span></div>
+                        <div class="stat-number">${Math.round(analysis.totalMessages / 7)}</div>
+                        <div class="stat-label">Avg Daily Messages</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">
+                        <span class="material-icons">bar_chart</span>
+                        Daily Activity - Last 7 Days
+                    </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="users-container">
+                    <h3 class="users-title">
+                        <span class="material-icons">emoji_events</span>
+                        Most Consistent Users (Active 4+ days)
+                    </h3>
+                    <div class="users-list" id="consistentUsers"></div>
+                </div>
+            </div>
+        `;
+        
+        // Add results styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .results-container {
+                display: grid;
+                gap: 24px;
+            }
+            
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+            
+            .stat-card {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                text-align: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #25D366;
+            }
+            
+            .stat-icon {
+                color: #25D366;
+                margin-bottom: 8px;
+            }
+            
+            .stat-number {
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: #25D366;
+                margin-bottom: 4px;
+            }
+            
+            .stat-label {
+                color: #666;
+                font-size: 0.9rem;
+            }
+            
+            .chart-container {
+                background: white;
+                border-radius: 8px;
+                padding: 24px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #25D366;
+            }
+            
+            .chart-title {
+                font-size: 1.2rem;
+                color: #25D366;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .chart-wrapper {
+                position: relative;
+                height: 300px;
+            }
+            
+            .users-container {
+                background: white;
+                border-radius: 8px;
+                padding: 24px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #25D366;
+            }
+            
+            .users-title {
+                font-size: 1.2rem;
+                color: #25D366;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            
+            .users-list {
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            
+            .user-item {
+                background: #f5f5f5;
+                padding: 12px;
+                margin: 8px 0;
+                border-radius: 6px;
+                border-left: 3px solid #25D366;
+            }
+            
+            @media (max-width: 768px) {
+                .stats-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
         this.displayConsistentUsers(analysis.consistentUsers);
         
-        // Show results first, then create chart to ensure proper sizing
-        document.getElementById('results').style.display = 'block';
-        
-        // Small delay to ensure DOM is rendered
+        // Create chart after DOM is ready
         setTimeout(() => {
             this.createChart(analysis.last7Days);
         }, 100);
     }
 
-    createStatsCards(analysis) {
-        const statsGrid = document.getElementById('statsGrid');
-        const totalActive = Math.max(...analysis.last7Days.map(d => d.activeUsers));
-        const totalNew = analysis.last7Days.reduce((sum, d) => sum + d.newUsers, 0);
-        const avgDaily = Math.round(analysis.totalMessages / 7);
 
-        statsGrid.innerHTML = `
-            <div class="stat-card">
-                <div class="stat-number">${analysis.totalUsers}</div>
-                <div class="stat-label">Total Users</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${totalNew}</div>
-                <div class="stat-label">New Joins (7 days)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${totalActive}</div>
-                <div class="stat-label">Peak Daily Active</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${avgDaily}</div>
-                <div class="stat-label">Avg Daily Messages</div>
-            </div>
-        `;
-    }
 
     createChart(data) {
         const ctx = document.getElementById('activityChart').getContext('2d');
@@ -251,15 +400,15 @@ class WhatsAppAnalyzer {
                     {
                         label: 'Active Users',
                         data: data.map(d => d.activeUsers),
-                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: '#25D366',
+                        borderColor: '#128C7E',
                         borderWidth: 1
                     },
                     {
                         label: 'New Joins',
                         data: data.map(d => d.newUsers),
-                        backgroundColor: 'rgba(255, 159, 64, 0.8)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
+                        backgroundColor: '#ff9800',
+                        borderColor: '#f57c00',
                         borderWidth: 1
                     }
                 ]
